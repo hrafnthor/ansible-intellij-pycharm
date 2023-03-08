@@ -111,7 +111,7 @@
     ansible.builtin.lineinfile:
       path: "/usr/share/applications/{{ desktop_entry_name }}"
       regexp: "^Icon="
-      line: "Icon={{ pycharm_version_dir }}/bin/idea.svg"
+      line: "Icon={{ pycharm_version_dir }}/bin/pycharm.svg"
     when:
       - desktop_copy is defined
       - desktop_copy.changed == true
@@ -121,7 +121,7 @@
     ansible.builtin.lineinfile:
       path: "/usr/share/applications/{{ desktop_entry_name }}"
       regexp: "^Exec="
-      line: "Exec=\"{{ pycharm_version_dir }}/bin/idea.sh\" %f"
+      line: "Exec=\"{{ pycharm_version_dir }}/bin/pycharm.sh\" %f"
     when:
       - desktop_copy is defined
       - desktop_copy.changed == true
