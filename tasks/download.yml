@@ -1,0 +1,145 @@
+---
+# This file contains tasks related to downloading one client at a time.
+# It expects to be iterated over with a variable 'client'containing the
+# relvant information.
+
+- name: Download PyCharm
+  block:
+
+  - name: Set IDE install location
+    ansible.builtin.set_fact:
+      pycharm_version_dir: "{{ pycharm_path }}/{{ client.edition }}/{{ client.version }}"
+
+
+  - name: Stat IDE install location
+    ansible.builtin.stat:
+      path:  "{{ pycharm_version_dir }}"
+    register: pycharm_version_dir_state
+
+
+  - name: Ensure installation directory
+    ansible.builtin.file:
+      path: "{{ pycharm_version_dir }}"
+      state: directory
+      modification_time: preserve
+      access_time: preserve
+      recurse: yes
+      owner: "root"
+      group: "root"
+      mode: 0755
+    when: not pycharm_version_dir_state.stat.exists
+
+
+  - name: Set professional archive name
+    ansible.builtin.set_fact:
+      pycharm_archive_name: "{{ pycharm_professional_archive_prefix }}-{{ client.version }}.tar.gz"
+    when:
+      - not pycharm_version_dir_state.stat.exists
+      - client.edition == "professional"
+
+
+  - name: Set community archive name
+    ansible.builtin.set_fact:
+      pycharm_archive_name: "{{ pycharm_community_archive_prefix }}-{{ client.version }}.tar.gz"
+    when:
+      - not pycharm_version_dir_state.stat.exists
+      - client.edition == "community"
+
+
+  - name: Set archive download path
+    ansible.builtin.set_fact:
+      pycharm_archive_url: "{{ pycharm_download_host }}/{{ pycharm_download_path }}/{{ pycharm_archive_name }}"
+    when: not pycharm_version_dir_state.stat.exists
+
+
+  - name: Download archive
+    ansible.builtin.get_url:
+      url: "{{ pycharm_archive_url }}"
+      dest: "/tmp/{{ pycharm_archive_name }}"
+      checksum: "sha256: {{ client.checksum }}"
+    register: archive_download_state
+    when: not pycharm_version_dir_state.stat.exists
+
+
+  - name: Extract archive
+    ansible.builtin.unarchive:
+      remote_src: yes
+      src: "/tmp/{{ pycharm_archive_name }}"
+      dest: "{{ pycharm_version_dir }}"
+      extra_opts: [--strip-components=1]
+      owner: "root"
+      group: "root"
+      mode: 0755
+    register: unarchive_state
+    when: not pycharm_version_dir_state.stat.exists
+
+
+  - name: Set desktop entry name
+    ansible.builtin.set_fact:
+      desktop_entry_name: "pycharm-{{ client.edition }}-{{ client.version }}.desktop"
+    when:
+      - client.desktop == true
+      - unarchive_state is defined
+      - unarchive_state.changed == true
+      - unarchive_state.failed == false
+
+
+  - name: Create desktop entry
+    ansible.builtin.copy:
+      src: desktop-entry.desktop
+      dest: "/usr/share/applications/{{ desktop_entry_name }}"
+      force: no
+      owner: root
+      group: root
+      mode: 0664
+    register: desktop_copy
+    when:
+      - desktop_entry_name is defined
+
+
+  - name: Set desktop entry name
+    ansible.builtin.lineinfile:
+      path: "/usr/share/applications/{{ desktop_entry_name }}"
+      regexp: "^Name="
+      line: "Name=pycharm-C {{ client.version }}"
+    when:
+      - desktop_copy is defined
+      - desktop_copy.changed == true
+
+
+  - name: Set desktop entry icon
+    ansible.builtin.lineinfile:
+      path: "/usr/share/applications/{{ desktop_entry_name }}"
+      regexp: "^Icon="
+      line: "Icon={{ pycharm_version_dir }}/bin/idea.svg"
+    when:
+      - desktop_copy is defined
+      - desktop_copy.changed == true
+
+
+  - name: Set desktop entry binary
+    ansible.builtin.lineinfile:
+      path: "/usr/share/applications/{{ desktop_entry_name }}"
+      regexp: "^Exec="
+      line: "Exec=\"{{ pycharm_version_dir }}/bin/idea.sh\" %f"
+    when:
+      - desktop_copy is defined
+      - desktop_copy.changed == true
+
+
+  - name: Validate desktop entry
+    ansible.builtin.shell:
+      cmd: "desktop-file-validate /usr/share/applications/{{ desktop_entry_name }}"
+    when:
+      - desktop_copy is defined
+      - desktop_copy.changed == true
+
+
+  always:
+
+    - name: Cleanup downloaded archive
+      ansible.builtin.file:
+        path: "/tmp/{{ pycharm_archive_name }}"
+        state: absent
+      when:
+        - pycharm_archive_name is defined

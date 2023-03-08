@@ -1,0 +1,28 @@
+{
+	"title": "pycharm_clients",
+    "description": "schema for user creation",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"properties": {
+			"version": {
+				"type": "string"
+			},
+			"checksum": {
+				"type": "string"
+			},
+			"edition": {
+				"type": "string",
+				"enum": ["community", "professional"]
+			},
+			"desktop": {
+				"type": "boolean"
+			}
+		},
+		"required": [
+			"version",
+			"checksum",
+			"edition"
+		]
+	}
+}

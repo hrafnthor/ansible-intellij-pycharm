@@ -1,0 +1,31 @@
+---
+# This file contains assertions for the information required for performing
+# the tasks in this role.
+
+
+- name: Assert 'pycharm_path' variable
+  tags: assert,jetbrains,pycharm
+  ansible.builtin.assert:
+    that:
+      - pycharm_path is defined
+      - pycharm_path is string
+      - pycharm_path | length > 0
+
+
+- name: Assert 'pycharm_clients' variable
+  tags: assert,jetbrains,pycharm
+  ansible.builtin.assert:
+    that:
+      - pycharm_clients is defined
+      - pycharm_clients is iterable
+
+
+- name: Validate 'pycharm_clients' schema
+  tags: assert,jetbrains,pycharm
+  ansible.utils.validate:
+    data: "{{ pycharm_clients }}"
+    criteria:
+      - "{{ lookup('file',  './criteria/pycharm_clients_criteria.json') | from_json }}"
+    engine: ansible.utils.jsonschema
+  when:
+  - pycharm_clients is defined
