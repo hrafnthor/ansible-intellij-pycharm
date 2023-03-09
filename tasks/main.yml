@@ -12,7 +12,15 @@
 - name: Download clients
   tags: software,download,jetbrains,pycharm
   ansible.builtin.include_tasks: download.yml
-  loop: "{{ pycharm_clients }}"
+  loop: "{{ pycharm.clients }}"
   loop_control:
     loop_var: client
-  when: pycharm_clients | length > 0
+  when: pycharm.clients | length > 0
+
+
+- name: Download clients
+  tags: software,download,jetbrains,pycharm
+  ansible.builtin.include_tasks: download.yml
+  vars:
+    client: pycharm.cli
+  when: pycharm.cli exists
