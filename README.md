@@ -49,7 +49,7 @@ When extracting a community edition of pycharm with version 2020.2.2 the path wi
 
 ##### User defined variables
 
-`pycharm_clients` [array]: Contains a list of client definitions that will be downloaded and extracted onto the host machine. While not required by the role, it will not do much unless given a list of clients to process.
+`clients` [array]: Contains a list of client definitions that will be downloaded and extracted onto the host machine. While not required by the role, it will not do much unless given a list of clients to process.
 
 Information on each available client can be found at Jetbrains archive [here](https://www.jetbrains.com/pycharm/download/other.html).
 
@@ -63,6 +63,14 @@ There are a few fields that each object can have, and they are:
 - edition:      [enum] (required) the edition of the IDE. Can either be `community` or `professional`
 - desktop:      [boolean] Indicates if a desktop entry should be created for the IDE.
 
+---
+
+`cli` [object]: Contains information about what client type and version should be added to the path via a symlink to /usr/bin.
+
+The object contains the following fields:
+
+- `edition` [enum]: (required) The edition of the IDE. Either `community` or `professional`.
+- `version` [String]: (required) The version of the editor that should be linked.
 
 Example Playbook
 ----------------
@@ -72,7 +80,8 @@ Here is an example for downloading two different versions of the IDE, where one 
 ```yaml
  - hosts: all
       vars:
-        - pycharm_clients:
+       - pycharm:
+          clients:
             - version: "2022.3.2"
               checksum: "0ae72d1931a6effbeb2329f6e5c35859d933798a494479f066ef0a7b2be6b553"
               edition: community
@@ -81,6 +90,9 @@ Here is an example for downloading two different versions of the IDE, where one 
               checksum: "56430090dd471e106fdc48463027d89de624759f8757248ced9776978854e4f6"
               edition: professional
               desktop: true
+          cli:
+            edition: community
+            version: "2022.3.2"
       roles:
          - hth-jetbrains-pycharm
 ```
