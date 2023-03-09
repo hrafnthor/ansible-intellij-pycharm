@@ -18,9 +18,9 @@
   when: pycharm.clients | length > 0
 
 
-- name: Download clients
-  tags: software,download,jetbrains,pycharm
-  ansible.builtin.include_tasks: download.yml
+- name: Add client to path
+  tags: software,jetbrains,pycharm
+  ansible.builtin.include_tasks: path.yml
   vars:
     client: pycharm.cli
   when: pycharm.cli is defined

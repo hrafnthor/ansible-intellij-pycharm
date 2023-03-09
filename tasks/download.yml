@@ -6,9 +6,6 @@
 - name: Download PyCharm
   block:
 
-  - name: print input
-    ansible.builtin.debug:
-      msg: "{{ client }}"
 
   - name: Set IDE install location
     ansible.builtin.set_fact:
