@@ -12,14 +12,6 @@
       - pycharm_path | length > 0
 
 
-- name: Assert 'pycharm_clients' variable
-  tags: assert,jetbrains,pycharm
-  ansible.builtin.assert:
-    that:
-      - pycharm_clients is defined
-      - pycharm_clients is iterable
-
-
 - name: Validate 'pycharm_clients' schema
   tags: assert,jetbrains,pycharm
   ansible.utils.validate:
@@ -28,4 +20,4 @@
       - "{{ lookup('file',  './criteria/pycharm_clients_criteria.json') | from_json }}"
     engine: ansible.utils.jsonschema
   when:
-  - pycharm_clients is defined
+  - pycharm.clients is defined
