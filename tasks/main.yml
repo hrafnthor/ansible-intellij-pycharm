@@ -22,5 +22,5 @@
   tags: software,jetbrains,pycharm
   ansible.builtin.include_tasks: path.yml
   vars:
-    client: pycharm.cli
+    client: "{{ pycharm.cli }}"
   when: pycharm.cli is defined
