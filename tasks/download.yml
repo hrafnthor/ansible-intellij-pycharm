@@ -6,6 +6,10 @@
 - name: Download PyCharm
   block:
 
+  - name: print client
+    ansible.builtin.debug:
+    msg: "{{ client }}"
+
   - name: Set IDE install location
     ansible.builtin.set_fact:
       pycharm_version_dir: "{{ pycharm_path }}/{{ client.edition }}/{{ client.version }}"
