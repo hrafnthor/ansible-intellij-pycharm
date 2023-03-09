@@ -23,4 +23,4 @@
   ansible.builtin.include_tasks: download.yml
   vars:
     client: pycharm.cli
-  when: pycharm.cli exists
+  when: pycharm.cli is defined
