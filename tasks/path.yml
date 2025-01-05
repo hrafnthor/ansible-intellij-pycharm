@@ -1,19 +1,16 @@
----
-# This file contains tasks for adding a PyCharm client to the global path
-
-- name: Stat client version directory
+- name: "Pycharm | Path | Stat client edition directory"
   ansible.builtin.stat:
-      path: "{{ pycharm_path }}/{{ client.edition }}/{{ client.version }}"
-  register: client_version_dir
+      path: "{{ pycharm_path }}/{{ client.edition }}"
+  register: client_edition_dir
 
 
-- name: Symlink client binary
+- name: "Pycharm | Path | Symlink client binary"
   ansible.builtin.file:
-    src: "{{ client_version_dir.stat.path }}/bin/pycharm.sh"
+    src: "{{ client_edition_dir.stat.path }}/bin/pycharm.sh"
     dest: "/usr/bin/pycharm"
     owner: "root"
     group: "root"
     mode: 0755
     state: link
   when:
-    - client_version_dir.stat.exists
+    - client_edition_dir.stat.exists

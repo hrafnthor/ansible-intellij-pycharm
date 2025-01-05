@@ -1,0 +1,10 @@
+- name: "Pycharm | Remove | Remove installation directory"
+  ansible.builtin.file:
+    path: "{{ pycharm_path }}/{{ edition }}"
+    state: absent
+
+
+- name: "Pycharm | Remove | Remove desktop entry"
+  ansible.builtin.file:
+    path: "/usr/share/applications/pycharm-{{ edition }}.desktop"
+    state: absent

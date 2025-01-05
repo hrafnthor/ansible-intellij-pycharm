@@ -1,0 +1,74 @@
+- name: "Pycharm | Install client edition"
+  block:
+
+  - name: "Pycharm | Install | Set install location"
+    ansible.builtin.set_fact:
+      pycharm_edition_dir: "{{ pycharm_path }}/{{ edition }}"
+
+
+  - name: "Pycharm | Install | Stat install directory"
+    ansible.builtin.stat:
+      path:  "{{ pycharm_edition_dir }}"
+    register: pycharm_edition_dir_state
+
+
+  - name: "Pycharm | Install | Ensure installation directory"
+    ansible.builtin.file:
+      path: "{{ pycharm_edition_dir }}"
+      state: directory
+      modification_time: preserve
+      access_time: preserve
+      recurse: yes
+      owner: "{{ pycharm.location.owner | default('root') }}"
+      group: "{{ pycharm.location.group | default('root') }}"
+      mode: "{{ pycharm.location.mode | default('0755')}}"
+    when:
+      - not pycharm_edition_dir_state.stat.exists
+
+
+  - name: "Pycharm | Install | Set archive name"
+    ansible.builtin.set_fact:
+      pycharm_archive_name: "pycharm-{{ edition }}-{{ version }}.tar.gz"
+    when:
+      - not pycharm_edition_dir_state.stat.exists
+
+
+  - name: "Pycharm | Install | Set archive download url"
+    ansible.builtin.set_fact:
+      pycharm_archive_url: "https://download.jetbrains.com/python/{{ pycharm_archive_name }}"
+    when:
+      - not pycharm_edition_dir_state.stat.exists
+
+
+  - name: "Pycharm | Install | Download archive"
+    ansible.builtin.get_url:
+      url: "{{ pycharm_archive_url }}"
+      dest: "/tmp/{{ pycharm_archive_name }}"
+      checksum: "sha256: {{ checksum }}"
+    register: archive_download_state
+    when:
+      - not pycharm_edition_dir_state.stat.exists
+
+
+  - name: "Pycharm | Install | Extract archive"
+    ansible.builtin.unarchive:
+      remote_src: yes
+      src: "/tmp/{{ pycharm_archive_name }}"
+      dest: "{{ pycharm_edition_dir }}"
+      extra_opts: [--strip-components=1]
+      owner: "{{ pycharm.location.owner | default('root') }}"
+      group: "{{ pycharm.location.group | default('root') }}"
+      mode: "{{ pycharm.location.mode | default('0755')}}"
+    register: unarchive_state
+    when:
+      - archive_download_state is defined
+      - archive_download_state.changed
+
+  always:
+
+    - name: "Pycharm | Install | Cleanup downloaded archive"
+      ansible.builtin.file:
+        path: "/tmp/{{ pycharm_archive_name }}"
+        state: absent
+      when:
+        - pycharm_archive_name is defined

@@ -1,26 +1,92 @@
----
-# The following role attempts to download any requested PyCharm
-# clients and configure them.
-
-- name: Assert task variables
-  tags: assert,jetbrains,pycharm
-  ansible.builtin.import_tasks: assertions/assert.yml
+- name: "Pycharm | Validate input variables"
+  ansible.utils.validate:
+    data: "{{ pycharm }}"
+    criteria: "{{ lookup('file',  'assertions/criteria/pycharm-criteria.json') | from_json }}"
+    engine: ansible.utils.jsonschema
   run_once: yes
   delegate_to: localhost
 
 
-- name: Download clients
-  tags: software,download,jetbrains,pycharm
-  ansible.builtin.include_tasks: download.yml
-  loop: "{{ pycharm.clients }}"
-  loop_control:
-    loop_var: client
-  when: pycharm.clients | length > 0
+- name: "Pycharm | Set installation path"
+  ansible.builtin.set_fact:
+    pycharm_path: "{{ pycharm.path | default('/opt/jetbrains/pycharm') }}"
 
 
-- name: Add client to path
-  tags: software,jetbrains,pycharm
+- name: "Pycharm | Install professional client"
+  ansible.builtin.include_tasks: install.yml
+  vars:
+    version: "{{ pycharm.clients.professional.version }}"
+    checksum: "{{ pycharm.clients.professional.checksum }}"
+    edition: "professional"
+  when:
+    - pycharm.remove is undefined or not pycharm.remove
+    - pycharm.clients.professional.remove is undefined or not pycharm.clients.professional.remove
+    - pycharm.clients.professional is defined
+
+
+- name: "Pycharm | Install community client"
+  ansible.builtin.include_tasks: install.yml
+  vars:
+    version: "{{ pycharm.clients.community.version }}"
+    checksum: "{{ pycharm.clients.community.checksum }}"
+    edition: "community"
+  when:
+    - pycharm.remove is undefined or not pycharm.remove
+    - pycharm.clients.community.remove is undefined or not pycharm.clients.community.remove
+    - pycharm.clients.community is defined
+
+
+- name: "Pycharm | Desktop | Create community desktop entry"
+  ansible.builtin.include_tasks: desktop.yml
+  vars:
+    edition: "community"
+  when:
+    - pycharm.remove is undefined or not pycharm.remove
+    - pycharm.clients.community.remove is undefined or not pycharm.clients.community.remove
+    - pycharm.clients.community.desktop is defined
+    - pycharm.clients.community.desktop
+
+
+- name: "Pycharm | Desktop | Create professional desktop entry"
+  ansible.builtin.include_tasks: desktop.yml
+  vars:
+    edition: "professional"
+  when:
+    - pycharm.remove is undefined or not pycharm.remove
+    - pycharm.clients.professional.remove is undefined or not pycharm.clients.professional.remove
+    - pycharm.clients.professional.desktop is defined
+    - pycharm.clients.professional.desktop
+
+
+- name: "Pycharm | Add clients to path"
   ansible.builtin.include_tasks: path.yml
   vars:
     client: "{{ pycharm.cli }}"
-  when: pycharm.cli is defined
+  when:
+    - pycharm.remove is undefined or not pycharm.remove
+    - pycharm.cli.remove is undefined or not pycharm.cli.remove
+    - pycharm.cli is defined
+
+
+- name: "Pycharm | Remove community installation"
+  ansible.builtin.include_tasks: remove.yml
+  vars:
+    edition: "community"
+  when:
+    - (pycharm.remove is defined and pycharm.remove) or (pycharm.clients.community.remove is defined and pycharm.clients.community.remove)
+
+
+- name: "Pycharm | Remove professional installation"
+  ansible.builtin.include_tasks: remove.yml
+  vars:
+    edition: "professional"
+  when:
+    - (pycharm.remove is defined and pycharm.remove) or (pycharm.clients.professional.remove is defined and pycharm.clients.professional.remove)
+
+
+- name: "Pycharm | Remove | Remove binary link"
+  ansible.builtin.file:
+    path: "/usr/bin/pycharm"
+    state: absent
+  when:
+    - (pycharm.remove is defined and pycharm.remove) or (pycharm.cli.remove is defined and pycharm.cli.remove)

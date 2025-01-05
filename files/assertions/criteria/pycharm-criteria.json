@@ -1,0 +1,163 @@
+{
+    "title": "pycharm",
+    "description": "schema for user creation",
+    "type": "object",
+    "properties":
+    {
+        "remove":
+        {
+            "type": "boolean"
+        },
+        "location":
+        {
+            "type": "object",
+            "properties":
+            {
+                "path":
+                {
+                    "ref": "#/definitions/non-empty-string"
+                },
+                "owner":
+                {
+                    "ref": "#/definitions/non-empty-string"
+                },
+                "group":
+                {
+                    "ref": "#/definitions/non-empty-string"
+                },
+                "mode":
+                {
+                    "ref": "#/definitions/non-empty-string"
+                }
+            }
+        },
+        "clients":
+        {
+            "type": "object",
+            "properties":
+            {
+                "professional":
+                {
+                    "type": "object",
+                    "properties":
+                    {
+                        "version":
+                        {
+                            "ref": "#/definitions/non-empty-string"
+                        },
+                        "checksum":
+                        {
+                            "ref": "#/definitions/non-empty-string"
+                        },
+                        "remove":
+                        {
+                            "type": "boolean"
+                        },
+                        "desktop":
+                        {
+                            "type": "boolean"
+                        }
+                    },
+                    "oneOf":
+                    [
+                        {
+                            "required":
+                            [
+                                "version",
+                                "checksum"
+                            ]
+                        },
+                        {
+                            "required":
+                            [
+                                "remove"
+                            ]
+                        }
+                    ]
+                },
+                "community":
+                {
+                    "type": "object",
+                    "properties":
+                    {
+                        "version":
+                        {
+                            "ref": "#/definitions/non-empty-string"
+                        },
+                        "checksum":
+                        {
+                            "ref": "#/definitions/non-empty-string"
+                        },
+                        "remove":
+                        {
+                            "type": "boolean"
+                        },
+                        "desktop":
+                        {
+                            "type": "boolean"
+                        }
+                    },
+                    "oneOf":
+                    [
+                        {
+                            "required":
+                            [
+                                "version",
+                                "checksum"
+                            ]
+                        },
+                        {
+                            "required":
+                            [
+                                "remove"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "cli":
+        {
+            "type": "object",
+            "properties":
+            {
+                "edition":
+                {
+                    "type": "string",
+                    "enum":
+                    [
+                        "community",
+                        "professional"
+                    ]
+                },
+                "remove":
+                {
+                    "type": "boolean"
+                }
+            },
+            "oneOf":
+            [
+                {
+                    "required":
+                    [
+                        "edition"
+                    ]
+                },
+                {
+                    "required":
+                    [
+                        "remove"
+                    ]
+                }
+            ]
+        }
+    },
+    "definitions":
+    {
+        "non-empty-string":
+        {
+            "type": "string",
+            "minLength": 1
+        }
+    }
+}
