@@ -1,15 +1,27 @@
-Role Name
-=========
+# Ansible Pycharm
 
-This role will download, extract and configure any number of Jetbrains PyCharm.
+This role will download, extract and configure Jetbrains PyCharm.
 
-Requirements / Dependencies
-------------
+---
 
-There are no requirements nor dependencies.
+## Requirements
 
-Setup
------
+
+This role requires two separate tools be installed.
+
+First it requires the 'ansible.utils' collection be installed from Ansible-Galaxy via:
+
+```shell
+ansible-galaxy collection install ansible.utils
+```
+
+Secondly it requires the `jsonschema` Python package be installed via:
+
+```shell
+pip install jsonschema
+```
+
+## Setup
 
 Before the role can be used it needs to be added to the machine running the playbook, and as of writing this, this role is not hosted on Ansible-Galaxy only on Github.
 
@@ -29,70 +41,57 @@ Before the role can be used it needs to be added to the machine running the play
 ansible-galaxy install -r .requirements.yml
 ```
 
-This will allow any playbook run from this machine to use the role hth-jetbrains-pycharm
+This will allow any playbook run from this machine to use the role hth-jetbrains-pycharm.
 
-Role Variables
---------------
+### Variables
+
 
 All variables are optional unless otherwise stated.
 
-##### Default role variables
+```yaml
+pycharm:
+  remove: [boolean] If present, will remove all installation and configuration made by the role
+  location:
+    path: [string]  The installation location where community and professional versions will be installed. Defaults to '/opt/jetbrains/pycharm'
+    owner: [string] The owner of the installation location. Defaults to 'root'.
+    group: [string] The group owning the installation location. Defaults to 'root'
+    mode: [string]  The mode for the installation location. Defaults to '0755'
+  clients:
+    professional:
+      version: [string] The version to install. Find it at https://www.jetbrains.com/pycharm/download/other.html [required if installing]
+      checksum: [string] The checksum of the version archive. See below. [required if installing]
+      remove: [boolean] Indicates if this edition should be removed.
+      desktop: [boolean] Indicates if a desktop entry should be created
+    community:
+      version: [string] The version to install. Find it at https://www.jetbrains.com/pycharm/download/other.html [required if installing]
+      checksum: [string] The checksum of the version archive. See below. [required if installing]
+      remove: [boolean] Indicates if this edition should be removed.
+      desktop: [boolean] Indicates if a desktop entry should be created
+    cli:
+      edition: [community, professional] Indicates the edition that should be linked
+      remove: [boolean] Indicates if the cli link should be removed
 
-`pycharm_path`:    [string]: (required) The path at which pycharm clients will be extracted to. Uses the client `edition` and `version` in determining the directory to extract to. Defaults to `/opt/jetbrains/pycharm`
+```
 
-###### Example
+Checksums for versions can be found by locating the appropriate tar archive [here](https://www.jetbrains.com/pycharm/download/other.html) and navigating to the url linked with `.sha256` appended (for example https://download.jetbrains.com/python/pycharm-professional-2024.3.1.1.tar.gz.sha256).
 
-When extracting a community edition of pycharm with version 2020.2.2 the path will be:
+#### Example Playbook
 
-`<pycharm_path>/community/2020.2.2/`
-
-
-##### User defined variables
-
-`clients` [array]: Contains a list of client definitions that will be downloaded and extracted onto the host machine. While not required by the role, it will not do much unless given a list of clients to process.
-
-Information on each available client can be found at Jetbrains archive [here](https://www.jetbrains.com/pycharm/download/other.html).
-
-There are a few fields that each object can have, and they are:
-
-- `version`:    [string] (required) the version number of the IDE
-- `checksum`:   [string] (required) the checksum of the archive being downloaded
-
-    - the checksum can be gotten by navigating to the download url of the archive and appending `.sha256` to the url. For example `https://download.jetbrains.com/python/pycharm-community-2022.3.2.tar.gz.sha256`.
-
-- edition:      [enum] (required) the edition of the IDE. Can either be `community` or `professional`
-- desktop:      [boolean] Indicates if a desktop entry should be created for the IDE.
-
----
-
-`cli` [object]: Contains information about what client type and version should be added to the path via a symlink to /usr/bin.
-
-The object contains the following fields:
-
-- `edition` [enum]: (required) The edition of the IDE. Either `community` or `professional`.
-- `version` [String]: (required) The version of the editor that should be linked.
-
-Example Playbook
-----------------
-
-Here is an example for downloading two different versions of the IDE, where one will have a desktop entry created while the other one will not.
 
 ```yaml
  - hosts: all
       vars:
-       - pycharm:
+        pycharm:
+          location:
+            group: "developers"
+            mode: "2774"
           clients:
-            - version: "2022.3.2"
-              checksum: "0ae72d1931a6effbeb2329f6e5c35859d933798a494479f066ef0a7b2be6b553"
-              edition: community
-              desktop: false
-            - version: "2022.3.2"
-              checksum: "56430090dd471e106fdc48463027d89de624759f8757248ced9776978854e4f6"
-              edition: professional
+            professional:
+              version: "2024.3.1.1"
+              checksum: "5698131d93d00a261c720a31ec54ef1c850581c274be6938dd923e8c0383da25"
               desktop: true
           cli:
-            edition: community
-            version: "2022.3.2"
+            edition: professional
       roles:
          - hth-jetbrains-pycharm
 ```
