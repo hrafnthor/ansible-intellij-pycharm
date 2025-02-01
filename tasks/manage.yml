@@ -1,0 +1,169 @@
+- name: "Pycharm | Manage | Set client version year"
+  ansible.builtin.set_fact:
+    pycharm_client_version_year: "{{ client.version.split('.')[0] | int }}"
+
+- name: "Pycharm | Manage | Set client install path"
+  ansible.builtin.set_fact:
+    pycharm_client_install_path: "{{ pycharm_path }}/{{ client.edition }}/{{ pycharm_client_version_year }}"
+
+- name: "Pycharm | Manage | Manage client edition directory"
+  ansible.builtin.file:
+    path: "{{ pycharm_client_install_path }}"
+    modification_time: preserve
+    access_time: preserve
+    state: "{{ 'directory' if (client.remove is undefined or not client.remove) else 'absent' }}"
+
+- name: "Pycharm | Manage | Stat client edition directory"
+  ansible.builtin.stat:
+      path: "{{ pycharm_client_install_path }}"
+  register: pycharm_client_stat
+  when:
+    - client.remove is undefined or not client.remove
+
+- name: "Pycharm | Manage | Is client edition directory is empty"
+  ansible.builtin.set_fact:
+    pycharm_client_dir_empty: "{{ pycharm_client_stat.stat.nlink == 2 }}"
+  when:
+    - client.remove is undefined or not client.remove
+
+
+- name: "Pycharm | Manage | Download and install client archive"
+  block:
+
+  - name: "Pycharm | Manage | Set archive name"
+    ansible.builtin.set_fact:
+      pycharm_client_archive_name: "pycharm-{{ client.edition }}-{{ client.version }}.tar.gz"
+    when:
+      - client.remove is undefined or not client.remove
+      - pycharm_client_dir_empty
+
+  - name: "Pycharm | Manage | Set archive download url"
+    ansible.builtin.set_fact:
+      pycharm_client_archive_url: "https://download.jetbrains.com/python/{{ pycharm_client_archive_name }}"
+    when:
+      - client.remove is undefined or not client.remove
+      - pycharm_client_dir_empty
+
+  - name: "Pycharm | Manage | Set archive download location"
+    ansible.builtin.set_fact:
+      pycharm_client_archive_download_path: "/tmp/{{ pycharm_client_archive_name }}"
+    when:
+      - client.remove is undefined or not client.remove
+      - pycharm_client_dir_empty
+
+  - name: "Pycharm | Manage | Download client archive"
+    ansible.builtin.get_url:
+      url: "{{ pycharm_client_archive_url }}"
+      dest: "{{ pycharm_client_archive_download_path }}"
+      checksum: "sha256: {{ client.checksum }}"
+    register: client_archive_download_state
+    when:
+      - client.remove is undefined or not client.remove
+      - pycharm_client_dir_empty
+
+
+  - name: "Pycharm | Manage | Extract archive"
+    ansible.builtin.unarchive:
+      remote_src: yes
+      src: "{{ pycharm_client_archive_download_path }}"
+      dest: "{{ pycharm_client_install_path }}"
+      extra_opts: [--strip-components=1]
+    when:
+      - client.remove is undefined or not client.remove
+      - pycharm_client_dir_empty
+      - client_archive_download_state.changed
+
+  always:
+
+    - name: "Pycharm | Manage | Cleanup downloaded archive"
+      ansible.builtin.file:
+        path: "{{ pycharm_client_archive_download_path }}"
+        state: absent
+      when:
+        - pycharm_client_archive_download_path is defined
+
+
+- name: "Pycharm | Manage | Set desktop launcher name"
+  ansible.builtin.set_fact:
+    pycharm_client_launcher_name: "pycharm-{{ client.edition }}-{{ pycharm_client_version_year }}.desktop"
+  when:
+    - (client.remove is defined and client.remove) or client.desktop is defined
+
+
+- name: "Pycharm | Manage | Set desktop launcher path"
+  ansible.builtin.set_fact:
+    pycharm_client_launcher_path: "/usr/share/applications/{{ pycharm_client_launcher_name }}"
+  when:
+    - (client.remove is defined and client.remove) or client.desktop is defined
+
+
+- name: "Pycharm | Manage | Stat desktop launcher"
+  ansible.builtin.stat:
+    path:  "{{ pycharm_client_launcher_path }}"
+  register: pycharm_client_launcher_stat
+  when:
+   - (client.remove is defined and client.remove) or client.desktop is defined
+
+
+- name: "Pycharm | Manage | Copy desktop launcher template"
+  ansible.builtin.copy:
+    src: "desktop-entry.desktop"
+    dest: "{{ pycharm_client_launcher_path }}"
+    force: no
+    owner: "root"
+    group: "root"
+    mode: 0664
+  when:
+    - pycharm_client_launcher_stat is defined
+    - not pycharm_client_launcher_stat.skipped | default(false)
+    - not pycharm_client_launcher_stat.stat.exists
+
+
+- name: "Pycharm | Manage | Set desktop launcher name field"
+  ansible.builtin.lineinfile:
+    path: "{{ pycharm_client_launcher_path }}"
+    regexp: "^Name="
+    line: "Name=pycharm-{{ client.edition[0] | upper }}-{{ pycharm_client_version_year }}"
+  register: launcher_changed
+  when:
+    - client.remove is undefined or not client.remove
+    - client.desktop is defined and (client.desktop.remove is undefined or not client.desktop.remove)
+
+
+- name: "Pycharm | Manage | Set desktop launcher icon field"
+  ansible.builtin.lineinfile:
+    path: "{{ pycharm_client_launcher_path }}"
+    regexp: "^Icon="
+    line: "Icon={{ pycharm_client_install_path }}/bin/pycharm.svg"
+  register: launcher_changed
+  when:
+    - client.remove is undefined or not client.remove
+    - client.desktop is defined and (client.desktop.remove is undefined or not client.desktop.remove)
+
+
+- name: "Pycharm | Manage | Set desktop launcher exec field"
+  ansible.builtin.lineinfile:
+    path: "{{ pycharm_client_launcher_path }}"
+    regexp: "^Exec="
+    line: "Exec=\"{{ pycharm_client_install_path }}/bin/{{ 'pycharm.sh' if (client.desktop.launcher == 'script') else 'pycharm' }}\" %f"
+  register: launcher_changed
+  when:
+    - client.remove is undefined or not client.remove
+    - client.desktop is defined and (client.desktop.remove is undefined or not client.desktop.remove)
+
+
+- name: "Pycharm | Manage | Validate desktop launcher"
+  ansible.builtin.shell:
+    cmd: "desktop-file-validate {{ pycharm_client_launcher_path }}"
+  when:
+    - client.remove is undefined or not client.remove
+    - client.desktop is defined and (client.desktop.remove is undefined or not client.desktop.remove)
+    - launcher_changed is defined and launcher_changed.changed
+
+
+- name: "Pycharm | Manage | Remove desktop launcher"
+  ansible.builtin.file:
+    path: "{{ pycharm_client_launcher_path }}"
+    state: absent
+  when:
+    - (client.remove is defined and client.remove) or (client.desktop.remove is defined and client.desktop.remove)

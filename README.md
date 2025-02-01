@@ -57,20 +57,17 @@ pycharm:
     group: [string] The group owning the installation location. Defaults to 'root'
     mode: [string]  The mode for the installation location. Defaults to '0755'
   clients:
-    professional:
-      version: [string] The version to install. Find it at https://www.jetbrains.com/pycharm/download/other.html [required if installing]
+    - version: [string] The version to install. Find it at https://www.jetbrains.com/pycharm/download/other.html [required if installing]
       checksum: [string] The checksum of the version archive. See below. [required if installing]
+      edition: [community, professional] Indicates the type of client this is. [required if installing].
       remove: [boolean] Indicates if this edition should be removed.
-      desktop: [boolean] Indicates if a desktop entry should be created
-    community:
-      version: [string] The version to install. Find it at https://www.jetbrains.com/pycharm/download/other.html [required if installing]
-      checksum: [string] The checksum of the version archive. See below. [required if installing]
-      remove: [boolean] Indicates if this edition should be removed.
-      desktop: [boolean] Indicates if a desktop entry should be created
-    cli:
-      edition: [community, professional] Indicates the edition that should be linked
-      remove: [boolean] Indicates if the cli link should be removed
-
+      desktop: 
+        remove: [boolean] Indicates if a desktop entry should be removed.
+        launcher: [script, native] Indicates if the launcher should use the bash script or native binary in the launcher. [required if not removing]
+  cli:
+    version: [String] The version to set as primary cli version. [required if not removing].
+    edition: [community, professional] Indicates the edition that should be linked. [required if not removing]
+    remove: [boolean] Indicates if the cli link should be removed
 ```
 
 Checksums for versions can be found by locating the appropriate tar archive [here](https://www.jetbrains.com/pycharm/download/other.html) and navigating to the url linked with `.sha256` appended (for example https://download.jetbrains.com/python/pycharm-professional-2024.3.1.1.tar.gz.sha256).

@@ -1,6 +1,6 @@
 {
     "title": "pycharm",
-    "description": "schema for user creation",
+    "description": "schema for management of the Python IDE Pycharm",
     "type": "object",
     "properties":
     {
@@ -33,87 +33,88 @@
         },
         "clients":
         {
-            "type": "object",
-            "properties":
+            "type": "array",
+            "items":
             {
-                "professional":
+                "type": "object",
+                "properties":
                 {
-                    "type": "object",
-                    "properties":
+                    "version":
                     {
-                        "version":
-                        {
-                            "ref": "#/definitions/non-empty-string"
-                        },
-                        "checksum":
-                        {
-                            "ref": "#/definitions/non-empty-string"
-                        },
-                        "remove":
-                        {
-                            "type": "boolean"
-                        },
-                        "desktop":
-                        {
-                            "type": "boolean"
-                        }
+                        "ref": "#/definitions/semvar-string"
                     },
-                    "oneOf":
-                    [
+                    "checksum":
+                    {
+                        "ref": "#/definitions/non-empty-string"
+                    },
+                    "edition":
+                    {
+                        "type": "string",
+                        "enum":
+                        [
+                            "community",
+                            "professional"
+                        ]
+                    },
+                    "remove":
+                    {
+                        "type": "boolean"
+                    },
+                    "desktop":
+                    {
+                        "type": "object",
+                        "properties":
                         {
-                            "required":
-                            [
-                                "version",
-                                "checksum"
-                            ]
+                            "remove":
+                            {
+                                "type": "boolean"
+                            },
+                            "launcher":
+                            {
+                                "type": "string",
+                                "enum":
+                                [
+                                    "native",
+                                    "script"
+                                ]
+                            }
                         },
-                        {
-                            "required":
-                            [
-                                "remove"
-                            ]
-                        }
-                    ]
+                        "anyOf":
+                        [
+                            {
+                                "required":
+                                [
+                                    "remove"
+                                ]
+                            },
+                            {
+                                "required":
+                                [
+                                    "launcher"
+                                ]
+                            }
+                        ]
+                    }
                 },
-                "community":
-                {
-                    "type": "object",
-                    "properties":
+                "anyOf":
+                [
                     {
-                        "version":
-                        {
-                            "ref": "#/definitions/non-empty-string"
-                        },
-                        "checksum":
-                        {
-                            "ref": "#/definitions/non-empty-string"
-                        },
-                        "remove":
-                        {
-                            "type": "boolean"
-                        },
-                        "desktop":
-                        {
-                            "type": "boolean"
-                        }
+                        "required":
+                        [
+                            "version",
+                            "edition",
+                            "checksum"
+                        ]
                     },
-                    "oneOf":
-                    [
-                        {
-                            "required":
-                            [
-                                "version",
-                                "checksum"
-                            ]
-                        },
-                        {
-                            "required":
-                            [
-                                "remove"
-                            ]
-                        }
-                    ]
-                }
+                    {
+                        "required":
+                        [
+                            "version",
+                            "edition",
+                            "remove"
+                        ]
+                    }
+                ]
             }
         },
         "cli":
@@ -121,6 +122,14 @@
             "type": "object",
             "properties":
             {
+                "remove":
+                {
+                    "type": "boolean"
+                },
+                "version":
+                {
+                    "ref": "#/definitions/semvar-string"
+                },
                 "edition":
                 {
                     "type": "string",
@@ -130,23 +139,30 @@
                         "professional"
                     ]
                 },
-                "remove":
+                "launcher":
                 {
-                    "type": "boolean"
+                    "type": "string",
+                    "enum":
+                    [
+                        "native",
+                        "script"
+                    ]
                 }
             },
-            "oneOf":
+            "anyOf":
             [
                 {
                     "required":
                     [
-                        "edition"
+                        "remove"
                     ]
                 },
                 {
                     "required":
                     [
-                        "remove"
+                        "version",
+                        "edition",
+                        "launcher"
                     ]
                 }
             ]
@@ -158,6 +174,11 @@
         {
             "type": "string",
             "minLength": 1
+        },
+        "semvar-string":
+        {
+            "type": "string",
+            "pattern": "^[\\d]+(.[\\d])*$"
         }
     }
 }
